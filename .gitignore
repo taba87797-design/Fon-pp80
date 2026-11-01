@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+node_modules/
+data/
+.test-data*/
+*.log
+coverage/
+packahe.json
+packahe-iock.json
+package-lock.json
+migrations.sql
+.vscode/
+ORIGINAL-BACKUP.md
+FRONTEND-BACKUP.md
