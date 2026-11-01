@@ -26,7 +26,7 @@
         <div class="stat-card overdue-stat"><h2>เกินกำหนด</h2><p id="overdue">—</p><small>แวะดูงานกลุ่มนี้ก่อน</small></div>
       </section>
       <section class="progress-panel" aria-label="ความคืบหน้า"><label for="completion">ความตั้งใจที่สำเร็จแล้ว <strong id="completionLabel">—</strong></label><progress id="completion" max="100" value="0">0%</progress></section>
-      <section id="legacyPanel" class="notice" hidden><h2>พบสมุดการบ้านเดิมในเครื่องนี้</h2><p>นำเข้าจากเบราว์เซอร์นี้ไปยังเซิร์ฟเวอร์ p01 โดยไม่ลบข้อมูลเดิม กดซ้ำได้โดยไม่เพิ่มงานเดิมซ้ำ</p><button id="importButton" type="button">นำเข้างานเดิม</button></section>
+      <section id="legacyPanel" class="notice" hidden><h2>พบสมุดการบ้านเดิมในเครื่องนี้</h2><p id="legacyNotice">นำเข้าจากเบราว์เซอร์นี้ไปยังเซิร์ฟเวอร์ p01 โดยไม่ลบข้อมูลเดิม กดซ้ำได้โดยไม่เพิ่มงานเดิมซ้ำ (ต้องใช้ HTTPS หรือ localhost)</p><button id="importButton" type="button">นำเข้างานเดิม</button></section>
       <div class="workspace">
         <section class="form-box" aria-labelledby="formTitle">
           <p class="eyebrow">MAKE A LITTLE PLAN</p><h2 id="formTitle">เพิ่มการบ้านใหม่</h2><p class="muted">จดตอนนี้ จะได้ไม่ลืมทีหลัง</p>
@@ -48,7 +48,7 @@
           <p class="calendar-note">Google Calendar เปิดแบบฟอร์มให้คุณยืนยันบันทึก ไม่ใช่การซิงก์อัตโนมัติ • ใช้ ICS กับแอปปฏิทินอื่นได้</p>
         </section>
       </div>
-      <aside class="privacy-note">สมุดส่วนตัวของเบราว์เซอร์นี้ ไม่ต้องสมัครหรือใส่รหัสผ่าน • คนที่ใช้โปรไฟล์เบราว์เซอร์เดียวกันจะเห็นสมุดเดียวกัน • หากล้างคุกกี้ เปลี่ยนเบราว์เซอร์ หรือใช้โหมดไม่ระบุตัวตน จะเข้าถึงสมุดเดิมไม่ได้ และยังไม่มีระบบกู้คืนหรือข้ามอุปกรณ์ • กรุณาใช้เครือข่ายที่ไว้ใจได้ และเปิดใช้งานระยะไกลผ่าน hostname HTTPS แยกของโปรเจกต์เท่านั้น</aside>
+      <aside class="privacy-note">สมุดส่วนตัวของเบราว์เซอร์นี้ ไม่ต้องสมัครหรือใส่รหัสผ่าน • โปรไฟล์เบราว์เซอร์เดียวกันใช้สมุดเดียวกัน • โหมดคุกกี้ใช้กับ localhost หรือ hostname HTTPS แยก ส่วนโหมด bearer เก็บตัวตนใน IndexedDB แยกตาม origin • เปลี่ยน protocol, hostname หรือ port จะเริ่มสมุดแยก ไม่ย้ายตัวตนจาก HttpOnly cookie • ล้างคุกกี้หรือพื้นที่จัดเก็บ เปลี่ยนเบราว์เซอร์ หรือใช้โหมดไม่ระบุตัวตนอาจทำให้เข้าถึงสมุดเดิมไม่ได้ ไม่มีระบบกู้คืนหรือข้ามอุปกรณ์ • HTTP ไม่เข้ารหัส ตัวตนและการบ้านอาจถูกดักอ่านหรือแก้ไขได้ ใช้เฉพาะ LAN ที่ไว้ใจได้ผ่าน origin ที่อนุมัติเท่านั้น</aside>
     </main>
     <footer><span>m. My Homework</span><span>ทีละงาน ทีละวัน ♡</span></footer>
   </div>

@@ -1,6 +1,28 @@
 # Deployment runbook - p01
 
-## Current MariaDB release
+## Current private LAN bearer release (2026-11-01)
+
+Owner confirmed deployment of the current p01 release from main and approved http://10.200.210.117:31111 as APP_ORIGIN. This supersedes earlier implementation-only and wait-for-HTTPS decisions. Preserve managed server PORT/DB values; never overwrite them with local connection settings. Public publication remains disabled.
+
+1. Reconfirm room1/std11/p01, current policy and saved GitHub https://github.com/taba87797-design/Fon-pp80. Review the exact main release against base 944d8d8; do not include preexisting untracked .env.example. Application allowlist remains package.json, server.js, public/index.html, public/style.css, public/index.js. Never send .env, credentials, migrations.sql, node_modules or private data via Git/source upload.
+2. Obtain the actual approved private browser origin including application port; do not infer it from the MCP host. For shared-IP HTTP set AUTH_MODE=bearer and APP_ORIGIN to that exact private LAN/Tailscale IPv4 HTTP origin with explicit non-default port. HTTPS origins also work in bearer mode. APP_ORIGIN rejects paths (even trailing slash), credentials, query/fragment and noncanonical forms. Preserve the exact Host through the proxy. Do not relax checks or add CORS.
+3. Default/unset AUTH_MODE=cookie preserves localhost and existing owners. Remote cookie mode still requires dedicated HTTPS APP_ORIGIN plus COOKIE_SECURE=true and browser Web Locks. Bearer mode never reads/emits identity cookies; credentials are omitted by frontend requests. GET session exposes mode only, not identity. Switching modes or protocol/host/port does not migrate notebook access.
+4. HTTP is deliberately unencrypted and suitable only for an approved trusted LAN. Browser JavaScript and network peers able to intercept traffic can access bearer identity. Public remains off. IndexedDB stores one canonical identity per origin; serialized first-open transactions and per-request identity checks fail closed on denied/corrupt/changed storage. Clearing storage/reloading begins a different notebook and loses old access; no account recovery exists. Do not extract HttpOnly tokens to migrate owners.
+5. Read the server managed env/revision privately before future deployment; change only authorized application settings and preserve managed PORT/DB and unrelated owner values. Local LAN DB settings must never overwrite runtime settings. This implementation does not save any env. Retain node-commonjs/server.js/public, lifecycle scripts disabled, one writer, non-root, 192 MiB, and platform-approved bind/routing.
+6. Existing db_std11_p01.homework_entries schema and owner-hash predicates remain unchanged; no new migration is needed or run. Migration revision 1 was previously accepted and directly executed with the owner account; that does not establish Portal applied history. Never rerun, reset, seed or migrate from startup/npm. Health is unchanged and is not an authentication/persistence guarantee.
+7. Recheck backend before deployment. Run affected browser integration on the actual HTTP origin: simultaneous first-open tabs share one identity; reload preserves it; no cookies or token URLs/DOM/logs; protected reads/writes/downloads carry Authorization; separate identities cannot access each other's list/item/stats/ICS/update/delete. Verify storage denial/corruption/change locks operations, legacy import alone is disabled without subtle, and blob downloads clean up. Use only disposable own records; do not repeat unrelated DB tests without a changed-path risk.
+8. Policy revision 3 has Semgrep/OSV/Gitleaks/ZAP/Sonar off. Do not invent mandatory advanced scan approval. Still inspect the platform security gate and enforce isolation, secret/routing safety, private-only publication and current room rules. Syntax/audit are not proof of deployment safety.
+9. Only after separate authorization, commit/push reviewed task changes, verify the remote commit, deploy via the saved GitHub URL, follow the job to completion, inspect scan report/status/logs, applied env revision and actual private URL. Queued is not success. Preserve records on failure and roll back source only with compatible schema; no destructive DB recovery.
+
+### Current verification scope
+
+This change uses inline in-memory backend tests plus syntax/editor diagnostics, not production SQL or a live LAN deployment. Historical real MariaDB/browser results below remain prior evidence only. Live HTTP browser behavior, actual approved route and runtime remain future acceptance checks. No deployment is claimed.
+
+## Archived MariaDB cookie-only runbook (superseded)
+
+All remaining sections are historical, including the decision to wait for HTTPS and mandatory advanced scanner gates. They do not govern the current release; policy revision 3 and the current steps above supersede them.
+
+### Historical MariaDB release
 
 Status: implementation/testing in progress; no application deployment has been performed.
 

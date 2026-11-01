@@ -3,7 +3,30 @@
 Thai homework journal for confirmed project p01 (application port 31111).
 Runtime: Node CommonJS, entry server.js, frontend public/. Current release uses MariaDB and anonymous browser ownership.
 
-## Current release: MariaDB and private browser notebooks
+## Current release: cookie default and explicit LAN bearer mode (2026-11-01)
+
+The owner approved deployment of the current private LAN release for p01 and confirmed http://10.200.210.117:31111 as APP_ORIGIN. This supersedes the earlier wait-for-HTTPS and implementation-only decisions. Public publication remains disabled.
+
+- Default AUTH_MODE=cookie (also when unset): localhost works without APP_ORIGIN; remote cookies still require a dedicated HTTPS hostname, exact APP_ORIGIN and COOKIE_SECURE=true. Existing HttpOnly cookie owners remain accessible. No cookie token is exposed or migrated.
+- Explicit AUTH_MODE=bearer requires APP_ORIGIN equal to the approved exact origin: HTTPS, or private LAN/Tailscale IPv4 HTTP with an explicit non-default port. Example shape only: http://<approved-private-ip>:31111. Obtain the real approved origin before configuring; no route is inferred from the MCP address. No path, trailing slash, credentials, query, fragment or noncanonical URL is accepted.
+- Host must exactly match the configured host including port. Every read/write rejects a supplied foreign/malformed Origin and Sec-Fetch-Site=cross-site. Missing Origin remains valid for same-origin GETs/non-browser clients; bearer authentication is still mandatory. There is no permissive CORS or trust of forwarded Host headers.
+- GET /api/session reports success/authMode, never a token. Mode-only discovery (X-Session-Mode: only) emits no cookie. Normal cookie bootstrap remains Web-Locks serialized. Bearer mode ignores cookies and emits none, requiring exactly Authorization: Bearer followed by 64 lowercase hexadecimal characters on every protected read/write/calendar request.
+- Bearer identity is generated with crypto.getRandomValues and committed via a serialized IndexedDB readwrite transaction. It needs neither Web Locks nor crypto.subtle. IndexedDB is canonical; no localStorage token mirror exists. Each protected request checks the stored token against the in-memory identity. Denied/corrupt storage, missing or changed identity during the page lifetime fails closed without replacement. Reload after fully clearing storage creates a separate notebook; there is no recovery.
+- IndexedDB is scoped to protocol/host/port. Changing origin starts a separate notebook; clearing browser storage loses old access. Cookie and bearer modes do not automatically transfer identities. People sharing a browser profile/origin share a notebook. HTTP is unencrypted: token and homework can be intercepted or modified. Use ONLY an approved trusted private LAN, never public/untrusted networks.
+- ICS uses an authenticated fetch with credentials omitted in bearer mode, then a temporary blob download with element/object-URL cleanup. Tokens never enter URLs, DOM or application logs. HTTP disables only legacy import when crypto.subtle is unavailable, with an explicit notice; CRUD and ICS remain available. Original localStorage data is not changed.
+- MariaDB db_std11_p01/homework_entries and all SHA-256 owner predicates are unchanged. No schema/migration/SQL is added or executed. Startup validates existing schema only; health response/DB readiness behavior is unchanged.
+- Install with npm.cmd install --ignore-scripts; start with npm.cmd start. DB configuration stays server-only in process.env. Keep .env private and preserve platform-managed PORT/DB values. Local cookie-mode configuration remains unchanged; managed server configuration uses AUTH_MODE=bearer and the owner-confirmed APP_ORIGIN while preserving managed PORT/DB values. One Node writer, 5,000 project rows and 32 queued creates remain the limits.
+- Policy revision 3: env.mode=optional; secret protection/.gitignore still required. Semgrep, OSV, Gitleaks, ZAP and Sonar modes are off, not mandatory advanced blocking gates. Platform isolation/secret/routing safety and actual job/security status still require inspection before any future deployment. Public publication remains disabled.
+
+## Verification for this change
+
+New verification: syntax/editor diagnostics and 23 inline backend checks passed using actual MariaDB after verifying SELECT DATABASE() = db_std11_p01. Covered bearer-only auth, no Set-Cookie, foreign Host/Origin rejection, owner isolation, create/read/update/delete with direct SQL readback, and authenticated ICS. The first harness run incorrectly omitted the required JSON Content-Type on DELETE; the corrected harness passed. Only its own disposable row was removed. No schema change or migration was needed. Browser/live routing verification is separate; historical results below are not new evidence.
+
+## Archived MariaDB cookie-only release (superseded)
+
+Everything from this heading through the end of this file is historical, including the wait-for-HTTPS decision, old deployment instructions and scanner requirements. It is NOT current policy or deployment guidance. Use the current section above and DEPLOY.md instead.
+
+### Historical release: MariaDB and private browser notebooks
 
 - Install with npm.cmd install --ignore-scripts. Start with npm.cmd start after configuring private .env and applying the schema separately.
 - Read DB_HOST, DB_PORT, DB_NAME, DB_USER and DB_PASSWORD only from process.env. The local owner's LAN connection and platform-managed runtime connection are different; never copy one over the other.

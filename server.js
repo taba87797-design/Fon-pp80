@@ -214,21 +214,37 @@ function calendar(item) {
 }
 function createApp(store) {
   const app = express();
+  const authMode = process.env.AUTH_MODE ?? "cookie";
+  if (!["cookie", "bearer"].includes(authMode)) throw new Error("Invalid AUTH_MODE");
   let appOrigin = null;
-  if (process.env.APP_ORIGIN) {
+  if (process.env.APP_ORIGIN !== undefined) {
     appOrigin = new URL(process.env.APP_ORIGIN);
-    if (appOrigin.protocol !== "https:" || isIP(appOrigin.hostname.replace(/^\[|\]$/g, "")) || !appOrigin.hostname.includes(".") || appOrigin.port || appOrigin.username || appOrigin.password || appOrigin.pathname !== "/" || appOrigin.search || appOrigin.hash || process.env.COOKIE_SECURE !== "true") throw new Error("APP_ORIGIN requires a dedicated HTTPS hostname and COOKIE_SECURE=true");
+    if (!["http:", "https:"].includes(appOrigin.protocol) || appOrigin.origin !== process.env.APP_ORIGIN || appOrigin.username || appOrigin.password) throw new Error("APP_ORIGIN must be an exact HTTP(S) origin without path or credentials");
+    if (authMode === "cookie" && (appOrigin.protocol !== "https:" || isIP(appOrigin.hostname.replace(/^\[|\]$/g, "")) || !appOrigin.hostname.includes(".") || appOrigin.port || process.env.COOKIE_SECURE !== "true")) throw new Error("Cookie APP_ORIGIN requires a dedicated HTTPS hostname and COOKIE_SECURE=true");
+    if (authMode === "bearer" && appOrigin.protocol === "http:") {
+      const octets = appOrigin.hostname.split(".").map(Number);
+      const lan = isIP(appOrigin.hostname) === 4 && (octets[0] === 10 || octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31 || octets[0] === 192 && octets[1] === 168 || octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127);
+      if (!lan || !appOrigin.port) throw new Error("Bearer HTTP requires an approved private LAN IPv4 origin with explicit non-default port");
+    }
   }
+  if (authMode === "bearer" && !appOrigin) throw new Error("Bearer mode requires APP_ORIGIN");
   app.disable("x-powered-by");
   app.use((req, res, next) => {
     res.set({ "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "no-referrer", "Permissions-Policy": "camera=(), microphone=(), geolocation=()" });
     next();
   });
   app.use((req, res, next) => {
-    // Cookies are not port-isolated. Remote access requires a dedicated HTTPS hostname.
+    // Never trust forwarded headers: the private proxy must preserve the approved Host.
     const host = req.get("Host") || "";
+    const hostCount = req.rawHeaders.filter((header, index) => index % 2 === 0 && header.toLowerCase() === "host").length;
     const local = /^(localhost|127\.0\.0\.1|\[::1\])(?::\d{1,5})?$/.test(host);
-    if (appOrigin ? host !== appOrigin.host : !local) return res.status(403).json({ success: false, message: "ต้องตั้งค่า hostname HTTPS แยกสำหรับโปรเจกต์นี้ก่อนเปิดใช้งาน" });
+    if (hostCount !== 1 || (appOrigin ? host !== appOrigin.host : !local)) return next(problem(403, "Host ไม่ได้รับอนุญาต"));
+    if (req.get("Sec-Fetch-Site") === "cross-site") return next(problem(403, "ไม่อนุญาตคำขอข้ามเว็บไซต์"));
+    const origin = req.get("Origin");
+    if (origin !== undefined) {
+      const expected = appOrigin ? appOrigin.origin : (req.secure ? "https://" : "http://") + host;
+      if (origin !== expected) return next(problem(403, "Origin ไม่ได้รับอนุญาต"));
+    }
     next();
   });
   app.use("/api", (req, res, next) => {
@@ -261,15 +277,18 @@ function createApp(store) {
   }));
   app.get("/api/session", (req, res, next) => {
     if (req.get("Sec-Fetch-Site") === "cross-site") return next(problem(403, "ไม่อนุญาตคำขอข้ามเว็บไซต์"));
+    if (authMode === "bearer" || req.get("X-Session-Mode") === "only") return res.json({ success: true, authMode });
     if (!tokenFrom(req)) {
       const token = randomBytes(32).toString("hex");
       res.cookie(cookieName, token, { httpOnly: true, sameSite: "strict", secure: process.env.COOKIE_SECURE === "true" || req.secure, path: "/", maxAge: 365 * 24 * 60 * 60 * 1000 });
     }
-    res.json({ success: true });
+    res.json({ success: true, authMode });
   });
   app.use("/api", (req, res, next) => {
-    const token = tokenFrom(req);
-    if (!token) return next(problem(401, "กรุณาเปิดคุกกี้ แล้วโหลดหน้าเว็บใหม่เพื่อเปิดสมุดส่วนตัว"));
+    const authorization = req.get("Authorization") || "";
+    const authorizationCount = req.rawHeaders.filter((header, index) => index % 2 === 0 && header.toLowerCase() === "authorization").length;
+    const token = authMode === "bearer" ? (authorizationCount === 1 && /^Bearer [a-f0-9]{64}$/.test(authorization) ? authorization.slice(7) : null) : tokenFrom(req);
+    if (!token) return next(problem(401, "ไม่พบตัวตนสมุดส่วนตัวที่ถูกต้อง กรุณาตรวจการจัดเก็บของเบราว์เซอร์"));
     req.owner = createHash("sha256").update(token).digest("hex");
     next();
   });
